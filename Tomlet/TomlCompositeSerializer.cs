@@ -7,7 +7,7 @@ using Tomlet.Models;
 
 namespace Tomlet;
 
-internal static class TomlCompositeSerializer
+public static class TomlCompositeSerializer
 {
     public static TomlSerializationMethods.Serialize<object> For(Type type)
     {
