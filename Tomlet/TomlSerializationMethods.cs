@@ -69,10 +69,19 @@ namespace Tomlet
             Register(lt => new TomlLocalTime(lt), value => (value as TomlLocalTime)?.Value ?? throw new TomlTypeMismatchException(typeof(TomlLocalTime), value.GetType(), typeof(TimeSpan)));
         }
 
+        private static bool IsValidSubClass(Type t, Type k)
+        {
+            return !t.IsPrimitive && k.Name != nameof(Object) && t.IsSubclassOf(k);
+        }
+
         internal static Serialize<object> GetSerializer(Type t)
         {
             if (Serializers.TryGetValue(t, out var value))
                 return (Serialize<object>) value;
+
+            //try get a subclass serializer if we cant find an exact match
+            if (Serializers.Any(x => IsValidSubClass(t, x.Key)))
+                return (Serialize<object>) Serializers.First(x => IsValidSubClass(t, x.Key)).Value;
 
             if (t.IsArray || t.Namespace == "System.Collections.Generic" && t.Name == "List`1")
             {
@@ -89,6 +98,10 @@ namespace Tomlet
             if (Deserializers.TryGetValue(t, out var value))
                 return (Deserialize<object>) value;
 
+            //try get a subclass Deserializer if we cant find an exact match
+            if (Deserializers.Any(x => IsValidSubClass(t, x.Key)))
+                return (Deserialize<object>) Deserializers.First(x => IsValidSubClass(t, x.Key)).Value;
+            
             if (t.IsArray)
             {
                 var arrayDeserializer = ArrayDeserializerFor(t.GetElementType()!);
