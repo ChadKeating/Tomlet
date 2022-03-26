@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Tomlet.Attributes;
@@ -32,7 +33,7 @@ public static class TomlCompositeDeserializer
         else
         {
             //Get all instance fields
-            var fields = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            var fields = GetAllFieldInfos(type).Distinct().ToArray();
 
             //Ignore NonSerialized fields.
             fields = fields.Where(f => !f.IsNotSerialized).ToArray();
@@ -98,5 +99,13 @@ public static class TomlCompositeDeserializer
         TomlSerializationMethods.Register(type, null, deserializer);
 
         return deserializer;
+    }
+
+    private static IEnumerable<FieldInfo> GetAllFieldInfos(Type type)
+    {
+       var fieldInfos = type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+       if(type.BaseType == null)
+           return fieldInfos;
+       return fieldInfos.Concat(GetAllFieldInfos(type.BaseType));
     }
 }
